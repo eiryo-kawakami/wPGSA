@@ -96,9 +96,10 @@ def wPGSA(tp_list,exp_value,positive,experiment):
 
 		result["z_score"][tp] = []
 		result["p_value"][tp] = []
-		size = gene_size
+
 		for TF in experiment_vector:
 			value_list = []
+			size = len(positive[TF])
 			target_vector = numpy.array(exp_vector)*numpy.array(positive_vector[TF])/numpy.array(experiment_vector[TF])
 			total_weight = sum(numpy.array(positive_vector[TF])/numpy.array(experiment_vector[TF]))
 			target_mean = sum(target_vector)/total_weight
