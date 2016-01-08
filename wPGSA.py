@@ -165,12 +165,12 @@ def start():
     logFC_file = args.logfc_file
     network_file = args.network_file
 
-	exp_value, tp_list = read_logFC(logFC_file)
-	positive, experiment = read_network(network_file)
-	result,TF_list = wPGSA(tp_list,exp_value,positive,experiment)
+    exp_value, tp_list = read_logFC(logFC_file)
+    positive, experiment = read_network(network_file)
+    result,TF_list = wPGSA(tp_list,exp_value,positive,experiment)
 
     output = logFC_file.replace('.txt','')
-	write_result(result,TF_list,tp_list,experiment,output)
+    write_result(result,TF_list,tp_list,experiment,output)
 
 if __name__ == "__main__":
 	try:
