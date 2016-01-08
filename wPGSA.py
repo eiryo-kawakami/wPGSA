@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # coding: UTF-8
 
+import argparse
 import sys, math, numpy
 import scipy as sp
 from scipy import stats
@@ -156,13 +157,19 @@ def write_result(result,TF_list,tp_list,experiment,output):
 				fo.write('\n')
 
 def start():
-	argvs = sys.argv
-	logFC_file = argvs[1]
-	network_file = argvs[2]
+    argparser = argparse.ArgumentParser(description='Estimate relative activities of transcriptional regulators from given transcriptome data')
+    argparser.add_argument('--network-file', nargs=1, dest='network_file', metavar='network_file', help='network file used as a reference, shared in /network directory')
+    argparser.add_argument('--logfc-file', nargs=1, dest='logfc_file', metavar='logFC_file', help='gene expression data file with the values in the Log2 fold-change, example in /sample_logFC_file')
+
+    args = argparser.parse_args()
+    logFC_file = args.logfc_file
+    network_file = args.network_file
+
 	exp_value, tp_list = read_logFC(logFC_file)
 	positive, experiment = read_network(network_file)
 	result,TF_list = wPGSA(tp_list,exp_value,positive,experiment)
-	output = argvs[1].replace('.txt','')
+
+    output = logFC_file.replace('.txt','')
 	write_result(result,TF_list,tp_list,experiment,output)
 
 if __name__ == "__main__":
