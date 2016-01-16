@@ -1,5 +1,11 @@
 import os, sys, commands, re
 
+argvs = sys.argv
+
+Genome = argvs[1]
+input_info = argvs[2]
+local_strage = argvs[3]
+
 ## ssh key location, must be absolute path ##
 sshkey = '/home/eiryo-kawakami/.ssh/id_rsa' # FIXME
 
@@ -22,18 +28,49 @@ bowtie2          = os.path.join(tool_dir,'bowtie2/bowtie2')
 samtools         = os.path.join(tool_dir,'samtools-1.2/samtools')
 #bam2rc          = '%s/exec_bam2readcount.R' % (tool_dir)
 get_srafile      = os.path.join(tool_dir,'get_srafile.sh')
+python_path      = os.path.join(os.environ['HOME'],'Python-2.7.2')
 
 sra_accessions_tab = os.path.join(project_root,'table/SRA_Accessions.tab') # original: ftp.ncbi.nlm.nih.gov/sra/reports/Metadata/SRA_Accessions.tab
 
-def disk_space_check():
+def make_resultDir(project_root,Genome,bioProject):
+	cmd = 'mkdir -p %s/%s/%s' % (project_root,Genome,bioProject)
+	os.system(cmd)
+
+def check_disk_space():
 	msg = 'checking disk space...'
 	print msg
 	cmd = 'lfs quota -u eiryo-kawakami ./'
 	disk_info = commands.getoutput(cmd)
 	using_space = int(re.findall(r'^\s*[0-9]+',disk_info)[0].replace(' ',''))
-	if using_space > 500000000:
-		cmd = 'wait'
-		os.system(cmd)
+	
+	return using_space
+
+def read_input_info(input_info):
+	column = {}
+	sample_list = {}
+	control_list = {}
+	with open(input_info,'r') as fi:
+		line = fi.readline()
+		itemList = line[:-1].split('\t')
+		for i in range(len(itemList)):
+			column[itemList[i]] = i
+		line = fi.readline()
+		while line:
+			itemList = line[:-1].split('\t')
+			if itemList[column['bioproject']] != 'No_info':
+				if itemList[column['sample_GSM']] != '' and itemList[column['control_GSM']] != '':
+					bioProject = itemList[column['bioproject']]
+					sample_GSM = itemList[column['sample_GSM']]
+					control_GSM = itemList[column['sample_GSM']]
+					if bioProject not in control_list:
+						control_list[bioProject] = []
+					control_list[bioProject].append(control_GSM)
+					if control_GSM not in sample_list:
+						sample_list[control_GSM] = []
+					sample_list[control_GSM].append(sample_GSM)
+			line = fi.readline()
+
+	return control_list,sample_list
 
 def get_SRR_ID(GSM_ID):
 	msg = '%s : get SRR ID...' % (sampleID)
@@ -124,7 +161,17 @@ def merge_bam_files(SRR_list,GSM_ID):
 	cmd = '%s merge %s.bam %s' % (samtools,GSM_ID,bam_list)
 	os.system(cmd)
 
-def exec_macs2_peakcall(sample_BAM,control_BAM):
-	msg = 'calling peak: %s.bam compaired with %s.bam' % (sample_BAM,control_BAM)
+def exec_macs2_peakcall(sample_GSM,control_GSM,Genome):
+	msg = 'calling peak: %s.bam compaired with %s.bam' % (sample_GSM,control_GSM)
+	print msg
+	cmd = 'export PYTHONPATH=%s:$PYTHONPATH' % (python_path)
+	os.system(cmd)
+	cmd = '%s callpeak -t %s.bam -c %s.bam -f BAM -g %s -n %s' % (macs2,sample_GSM,control_GSM,Genome,sample_GSM)
+	os.system(cmd)
+
+def transfer_files(project_root,bioProject,Genome,local_strage):
+	msg = 'transfering result files...'
 	print msg
 
+	cmd = ''
+	os.system(cmd)
