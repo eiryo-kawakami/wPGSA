@@ -1,10 +1,9 @@
-import os, sys, commands, re
+#!/usr/bin/python
+# coding: UTF-8
 
-argvs = sys.argv
-
-Genome = argvs[1]
-input_info = argvs[2]
-local_strage = argvs[3]
+import argparse
+import os, sys, commands, re, time
+import threading
 
 ## ssh key location, must be absolute path ##
 sshkey = '/home/eiryo-kawakami/.ssh/id_rsa' # FIXME
@@ -18,7 +17,7 @@ edirect          = os.path.join(tool_dir,'edirect')
 esearch          = os.path.join(edirect,'esearch')
 efetch           = os.path.join(edirect,'efetch')
 xtract           = os.path.join(edirect,'xtract')
-bowtie2_indexes  = os.path.join(tool_dir,'bowtie2/indexes/'+refdb)
+#bowtie2_indexes  = os.path.join(tool_dir,'bowtie2/indexes/'+refdb)
 fastq_dump       = os.path.join(tool_dir,'sratoolkit/bin/fastq-dump')
 fastqc           = os.path.join(tool_dir,'FastQC/fastqc')
 #Trimmomatic_dir = os.path.join(tool_dir,'Trimmomatic-0.33')
@@ -33,13 +32,15 @@ python_path      = os.path.join(os.environ['HOME'],'Python-2.7.2')
 sra_accessions_tab = os.path.join(project_root,'table/SRA_Accessions.tab') # original: ftp.ncbi.nlm.nih.gov/sra/reports/Metadata/SRA_Accessions.tab
 
 def make_resultDir(project_root,Genome,bioProject):
-	cmd = 'mkdir -p %s/%s/%s' % (project_root,Genome,bioProject)
+	cmd = 'mkdir -p %s/%s/%s 2>/dev/null' % (project_root,Genome,bioProject)
 	os.system(cmd)
 
 def check_disk_space():
 	msg = 'checking disk space...'
 	print msg
-	cmd = 'lfs quota -u eiryo-kawakami ./'
+	cmd = "`whoami`"
+	userID = commands.getoutput(cmd)
+	cmd = 'lfs quota -u %s ./' % (userID)
 	disk_info = commands.getoutput(cmd)
 	using_space = int(re.findall(r'^\s*[0-9]+',disk_info)[0].replace(' ',''))
 	
@@ -61,7 +62,7 @@ def read_input_info(input_info):
 				if itemList[column['sample_GSM']] != '' and itemList[column['control_GSM']] != '':
 					bioProject = itemList[column['bioproject']]
 					sample_GSM = itemList[column['sample_GSM']]
-					control_GSM = itemList[column['sample_GSM']]
+					control_GSM = itemList[column['control_GSM']]
 					if bioProject not in control_list:
 						control_list[bioProject] = []
 					control_list[bioProject].append(control_GSM)
@@ -101,6 +102,9 @@ def get_sra_file(SRR_ID,is_pairend):
 		cmd = '%s --split-files --gzip  %s.sra' % (fastq_dump,SRR_ID)
 		#print cmd
 		os.system(cmd)
+
+		cmd = 'rm %s.sra' % (SRR_ID)
+
 	else:
 		##SRA to FASTQ ##
 		msg = '%s : SRA to FASTQ...' % (SRR_ID)
@@ -108,6 +112,8 @@ def get_sra_file(SRR_ID,is_pairend):
 		cmd = '%s --gzip %s.sra' % (fastq_dump,SRR_ID)
 		#print cmd
 		os.system(cmd)
+
+		cmd = 'rm %s.sra' % (SRR_ID)
 
 def exec_FASTQC(SRR_ID,is_pairend):
 	msg = '%s : FASTQC...' % (sampleID)
@@ -153,7 +159,6 @@ def convert_sam2bam(SRR_ID):
 	cmd = 'rm %s.sam' % (SRR_ID)
 	os.system(cmd)
 
-
 def merge_bam_files(SRR_list,GSM_ID):
 	msg = 'merge bam files...'
 	print msg
@@ -172,6 +177,54 @@ def exec_macs2_peakcall(sample_GSM,control_GSM,Genome):
 def transfer_files(project_root,bioProject,Genome,local_strage):
 	msg = 'transfering result files...'
 	print msg
-
-	cmd = ''
+	cmd = '' #file transfer to local strage
 	os.system(cmd)
+	cmd = 'rm -rf %s/%s/%s' % (project_root,Genome,bioProject)
+	os.system(cmd)
+
+def start():
+	argparser = argparse.ArgumentParser(description='Batch process ChIP-seq analysis based on a input table.')
+	argparser.add_argument('--Genome', nargs=1, dest='Genome', metavar='Genome', help='reference genome used in mapping. eg) mm9, hg19')
+	argparser.add_argument('--input_info', nargs=1, dest='input_info', metavar='input_info', help='input table for sample-input correspondence')
+	#argparser.add_argument('--local_strage', nargs=1, dest='local_strage', metavar='local_strage', help='local strage address for transfering result files')
+
+	args = argparser.parse_args()
+	Genome = args.Genome[0]
+	input_info = args.input_info[0]
+	#local_strage = args.local_strage[0]
+
+	cmd = 'mkdir -p %s/%s 2>/dev/null' % (project_root,Genome)
+	os.system(cmd)
+
+	bowtie2_indexes  = os.path.join(tool_dir,'bowtie2/indexes/'+Genome)
+
+	control_list,sample_list = read_input_info(input_info)
+
+	for bioProject in control_list:
+		make_resultDir(project_root,Genome,bioProject)
+		cmd = 'cd %s/%s/%s' % (project_root,Genome,bioProject)
+		os.system(cmd)
+		control_GSMs = ' '.join(control_list[bioProject])
+		sample_array = []
+		for control_GSM in control_list[bioProject]:
+			sample_array.extend(sample_list[control_GSM])
+		print sample_array
+		sample_GSMs = ' '.join(sample_array)
+		cmd = 'sh seq_exec_sra2bam.sh %s %s %s \"%s\" \"%s\"' % (project_root,Genome,bioProject,sample_GSMs,control_GSMs)
+		print cmd
+		os.system(cmd)
+		for control_GSM in control_list[bioProject]:
+			for sample_GSM in sample_list[control_GSM]:
+				cmd = 'sh %s/exec_macs2_peakcall.sh %s %s %s %s %s' % (project_root,project_root,Genome,bioproject,sample_GSM,control_GSM)
+				os.system(cmd)
+
+if __name__ == "__main__":
+	try:
+		start()
+	except KeyboardInterrupt:
+		pass
+	except IOError as e:
+		if e.errno == errno.EPIPE:
+			pass
+		else:
+			raise
