@@ -214,9 +214,9 @@ def start():
 				sample_array.append(sample_GSM)
 		print sample_array
 		sample_GSMs = ' '.join(sample_array)
-		cmd = 'sh seq_exec_sra2bam.sh %s %s %s \"%s\" \"%s\"' % (project_root,Genome,bioProject,sample_GSMs,control_GSMs)
-		print cmd
-		os.system(cmd)
+#		cmd = 'sh seq_exec_sra2bam.sh %s %s %s \"%s\" \"%s\"' % (project_root,Genome,bioProject,sample_GSMs,control_GSMs)
+#		print cmd
+#		os.system(cmd)
 		for control_GSM in control_list[bioProject]:
 			for sample_GSM in sample_list[control_GSM]:
 				cmd = 'sh %s/exec_macs2_peakcall.sh %s %s %s %s %s' % (project_root,project_root,Genome,bioProject,sample_GSM,control_GSM)

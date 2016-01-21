@@ -169,23 +169,29 @@ def start():
 
 	bowtie_indexes = os.path.join(tool_dir,'bowtie-1.1.1/indexes/'+Genome+'_color')
 	bowtie2_indexes  = os.path.join(tool_dir,'bowtie2/indexes/'+Genome)
+	if len(SRRs) > 0:
+		for SRR_ID in SRRs:
+			is_pairend = is_paired_end(SRR_ID)
+			platform = eval_platform(SRR_ID)
+			get_sra_file(SRR_ID,is_pairend)
+			exec_FASTQC(SRR_ID,is_pairend)
+			print 'platform %s' % (platform)
+			if platform == "1":
+				exec_bowtie(SRR_ID,is_pairend,bowtie_indexes)
+			else:
+				exec_bowtie2(SRR_ID,is_pairend,bowtie2_indexes)
+			convert_sam2bam(SRR_ID)
 
-	for SRR_ID in SRRs:
-		is_pairend = is_paired_end(SRR_ID)
-		platform = eval_platform(SRR_ID)
-		get_sra_file(SRR_ID,is_pairend)
-		exec_FASTQC(SRR_ID,is_pairend)
-		if platform == "1":
-			exec_bowtie(SRR_ID,is_pairend,bowtie_indexes)
-		else:
-			exec_bowtie2(SRR_ID,is_pairend,bowtie2_indexes)
-		convert_sam2bam(SRR_ID)
+		merge_bam_files(SRRs,GSM_ID)
 
-	merge_bam_files(SRRs,GSM_ID)
+		msg = '%s finished' % (GSM_ID)
 
-	msg = '%s finished' % (GSM_ID)
+		print msg
+	else:
 
-	print msg
+		msg = '%s no sra file' % (GSM_ID)
+
+		print msg
 
 if __name__ == "__main__":
 	try:
