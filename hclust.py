@@ -8,7 +8,7 @@ import scipy.spatial.distance as dist
 
 # import data and put into native 2d python array
 inFile = open(sys.argv[1], 'r')
-colHeaders = inFile.next().strip().split()[1:]
+colHeaders = next(inFile).strip().split()[1:]
 rowHeaders = []
 dataMatrix = []
 for line in inFile:
@@ -32,7 +32,7 @@ heatmapOrder = hier.leaves_list(linkageMatrix)
 # reorder the data matrix and row headers according to leaves
 orderedDataMatrix = dataMatrix[heatmapOrder,:]
 rowHeaders = numpy.array(rowHeaders)
-orderedRowHeaders = rowHeaders[heatmapOrder,:]
+orderedRowHeaders = rowHeaders[heatmapOrder,]
 
 # output data for visualization in a browser with javascript/d3.js
 matrixOutput = []
@@ -46,8 +46,8 @@ for rowData in orderedDataMatrix:
     matrixOutput.append(rowOutput)
     row += 1
 
-print 'var maxData = ' + str(numpy.amax(dataMatrix)) + ";"
-print 'var minData = ' + str(numpy.amin(dataMatrix)) + ";"
-print 'var data = ' + str(matrixOutput) + ";"
-print 'var cols = ' + str(colHeaders) + ";"
-print 'var rows = ' + str([x for x in orderedRowHeaders]) + ";"
+print('var maxData = ' + str(numpy.amax(dataMatrix)) + ";")
+print('var minData = ' + str(numpy.amin(dataMatrix)) + ";")
+print('var data = ' + str(matrixOutput) + ";")
+print('var cols = ' + str(colHeaders) + ";")
+print('var rows = ' + str([x for x in orderedRowHeaders]) + ";")
