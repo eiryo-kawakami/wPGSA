@@ -1,0 +1,45 @@
+namespace :pgsea do
+  desc "setup directories and tables"
+  task :setup => [ :tools, :table ]
+  
+  current_dir = File.expand_path(File.dirname(__FILE__))
+  tools = File.join(current_dir, 'tools')
+  table = File.join(current_dir, 'table')
+  
+  # create directories
+  directory tools
+  directory table
+  directory "#{tools}/bowtie2"
+  directory "#{tools}/bowtie2/indexes"
+  directory "#{tools}/sratoolkit/bin"
+  
+  task :tools => [ :bowtie2, :bt2idx, :sratoolkit, :fastqc ]
+  
+  task :bowtie2 => "#{tools}/bowtie2" do |t|
+    sh "ln -s /usr/local/bin/bowtie2* #{tools}/bowtie2"
+  end
+  
+  task :bt2idx => "#{tools}/bowtie2/indexes" do |t|
+    cd "#{tools}/bowtie2/indexes"
+    sh 'wget "ftp://ftp.ccb.jhu.edu/pub/data/bowtie2_indexes/mm9.zip"'
+    sh 'unzip mm9.zip'
+  end
+  
+  task :sratoolkit => "#{tools}/sratoolkit/bin" do |t|
+    sh "ln -s /usr/local/bin/fastq-dump #{tools}/sratoolkit/bin"
+  end
+  
+  task :fastqc do |t|
+    cd tools
+    sh 'wget "http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.3.zip"'
+    sh 'unzip fastqc_v0.11.3.zip'
+    sh 'chmod 755 FastQC/fastqc'
+  end
+  
+  task :table => [ :sra_accessions ]
+  
+  task :sra_accessions do |t|
+    cd table
+    sh 'lftp -c "open ftp.ncbi.nlm.nih.gov/sra/reports/Metadata && pget -n 8 SRA_Accessions.tab"'
+  end
+end

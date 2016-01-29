@@ -16,14 +16,15 @@ xtract           = os.path.join(edirect,'xtract')
 fastq_dump       = os.path.join(tool_dir,'sratoolkit/bin/fastq-dump')
 fastqc           = os.path.join(tool_dir,'FastQC/fastqc')
 #Trimmomatic_dir = os.path.join(tool_dir,'Trimmomatic-0.33')
-bowtiedir = os.path.join(tool_dir,'bowtie-1.1.1')
-bowtie = os.path.join(tool_dir,'bowtie-1.1.1/bowtie')
+bowtiedir = os.path.join(tool_dir,'bowtie-1.1.2')
+bowtie = os.path.join(tool_dir,'bowtie-1.1.2/bowtie')
 bowtie2dir       = os.path.join(tool_dir,'bowtie2')
 bowtie2          = os.path.join(tool_dir,'bowtie2/bowtie2')
 samtools         = os.path.join(tool_dir,'samtools-1.2/samtools')
 get_srafile      = os.path.join(tool_dir,'get_srafile.sh')
 
 sra_accessions_tab = os.path.join(project_root,'table/SRA_Accessions.tab') # original: ftp.ncbi.nlm.nih.gov/sra/reports/Metadata/SRA_Accessions.tab
+gsm_srr_tab = os.path.join(project_root,'table/GSM_SRR.tab')
 
 def get_SRR_ID(GSM_ID):
 	msg = '%s : get SRR ID...' % (GSM_ID)
@@ -34,74 +35,119 @@ def get_SRR_ID(GSM_ID):
 	SRRs = re.findall('(SRR\\d+)', DocSum)
 	return SRRs
 
+def get_SRR_ID_from_table(GSM_ID):
+	msg = '%s : get SRR ID...' % (GSM_ID)
+	print msg
+	SRRs = []
+	with open(gsm_srr_tab,'r') as fi:
+		line = fi.readline()
+		line = fi.readline()
+		while line:
+			itemList = line[:-1].split('\t')
+			if itemList[0] == GSM_ID:
+				SRRs = itemList[1].split(',')
+			line = fi.readline()
+	return SRRs
+
+''' ##obsolete##
 def is_paired_end(SRR_ID):
-	ncbi_info_url = "http://trace.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?cmd=viewer&m=data&s=viewer&run="+SRR_ID
-	sep = "<td>PAIRED"
-	cmd = 'curl %s | grep -A10 Layout |grep %s |wc -l' % (ncbi_info_url,sep)
-	is_pairend = commands.getoutput(cmd)
+	ncbi_info_url = "\"http://trace.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?cmd=viewer&m=data&s=viewer&run=\""+SRR_ID
+	sep = "\"<td>PAIRED\""
+	cmd = '`curl %s | grep -A10 Layout |grep %s |wc -l`' % (ncbi_info_url,sep)
+	is_pairend = os.system(cmd)
 	return is_pairend
 
 def eval_platform(SRR_ID):
-	ncbi_info_url = "http://trace.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?cmd=viewer&m=data&s=viewer&run="+SRR_ID
-	sep = "<td>ABI Solid"
-	cmd = 'curl %s | grep -A10 Platform |grep %s |wc -l' % (ncbi_info_url,sep)
-	platform = commands.getoutput(cmd)
+	ncbi_info_url = "\"http://trace.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?cmd=viewer&m=data&s=viewer&run=\""+SRR_ID
+	sep = "\"<td>ABI Solid\""
+	cmd = '`curl %s | grep -A10 Platform |grep %s |wc -l`' % (ncbi_info_url,sep)
+	platform = os.system(cmd)
 	return platform
+''' ##obsolete##
 
-def get_sra_file(SRR_ID,is_pairend):
+def get_sra_file(SRR_ID,is_pairend,platform):
 	## generate filepath and retrieve file from SRA disk node t347 ##
 	cmd = '%s %s %s %s' % (get_srafile, SRR_ID, sra_accessions_tab, sshkey)
 	os.system(cmd)
 
-	if is_pairend=='yes':
-		##SRA to FASTQ ##
-		msg = '%s : SRA to FASTQ...' % (SRR_ID)
-		print msg
-    
-		cmd = '%s --split-files --gzip  %s.sra' % (fastq_dump,SRR_ID)
-		os.system(cmd)
-		cmd = 'rm %s.sra' % (SRR_ID)
-		os.system(cmd)
+	if platform=='1':
+		if is_pairend=='1':
+			##SRA to FASTQ ##
+			msg = '%s : SRA to FASTQ...' % (SRR_ID)
+			print msg
+			cmd = '%s --split-files --dumpcs %s.sra' % (fastq_dump,SRR_ID)
+			os.system(cmd)
+			cmd = 'rm %s.sra' % (SRR_ID)
+			os.system(cmd)
+
+		else:
+			##SRA to FASTQ ##
+			msg = '%s : SRA to FASTQ...' % (SRR_ID)
+			print msg
+			cmd = '%s --dumpcs %s.sra' % (fastq_dump,SRR_ID)
+			os.system(cmd)
+			cmd = 'rm %s.sra' % (SRR_ID)
+			os.system(cmd)
 
 	else:
-		##SRA to FASTQ ##
-		msg = '%s : SRA to FASTQ...' % (SRR_ID)
-		print msg
-		cmd = '%s --gzip %s.sra' % (fastq_dump,SRR_ID)
-		os.system(cmd)
-		cmd = 'rm %s.sra' % (SRR_ID)
-		os.system(cmd)
+		if is_pairend=='1':
+			##SRA to FASTQ ##
+			msg = '%s : SRA to FASTQ...' % (SRR_ID)
+			print msg
+			cmd = '%s --split-files --gzip  %s.sra' % (fastq_dump,SRR_ID)
+			os.system(cmd)
+			cmd = 'rm %s.sra' % (SRR_ID)
+			os.system(cmd)
 
-def exec_FASTQC(SRR_ID,is_pairend):
+		else:
+			##SRA to FASTQ ##
+			msg = '%s : SRA to FASTQ...' % (SRR_ID)
+			print msg
+			cmd = '%s --gzip %s.sra' % (fastq_dump,SRR_ID)
+			os.system(cmd)
+			cmd = 'rm %s.sra' % (SRR_ID)
+			os.system(cmd)
+
+def exec_FASTQC(SRR_ID,is_pairend,platform):
 	msg = '%s : FASTQC...' % (SRR_ID)
 	print msg
-	if is_pairend =='yes':
-		cmd = '%s %s_1.fastq.gz' % (fastqc,SRR_ID)
-		os.system(cmd)
-		cmd = '%s %s_2.fastq.gz' % (fastqc,SRR_ID)
-		os.system(cmd)
+	if platform=='1':
+		if is_pairend =='1':
+			cmd = '%s %s_1.fastq' % (fastqc,SRR_ID)
+			os.system(cmd)
+			cmd = '%s %s_2.fastq' % (fastqc,SRR_ID)
+			os.system(cmd)
+		else:
+			cmd = '%s %s.fastq' % (fastqc,SRR_ID)
+			os.system(cmd)
 	else:
-		cmd = '%s %s.fastq.gz' % (fastqc,SRR_ID)
-		os.system(cmd)
+		if is_pairend =='1':
+			cmd = '%s %s_1.fastq.gz' % (fastqc,SRR_ID)
+			os.system(cmd)
+			cmd = '%s %s_2.fastq.gz' % (fastqc,SRR_ID)
+			os.system(cmd)
+		else:
+			cmd = '%s %s.fastq.gz' % (fastqc,SRR_ID)
+			os.system(cmd)
 
 def exec_bowtie(SRR_ID,is_pairend,bowtie_indexes):
 	##Bowtie for ABI Solid##
 	msg = '%s : botie...' % (SRR_ID)
 	print msg
-	options = '-S -C --best --chunkmbs 2048 -p %s %s' % (core_num,bowtie_indexes)
+	options = '-S -C -p 4 %s' % (bowtie_indexes)
 	if is_pairend =='1':
-		cmd = 'export PATH=$PATH:%s && %s %s -1 %s_1.fastq.gz -2 %s_2.fastq.gz %s.sam' % (bowtiedir,bowtie,options,SRR_ID,SRR_ID,SRR_ID)
+		cmd = 'export PATH=$PATH:%s && %s %s -1 %s_1.fastq -2 %s_2.fastq %s.sam 2> bowtieReport.txt' % (bowtiedir,bowtie,options,SRR_ID,SRR_ID,SRR_ID)
 	else:
-		cmd = 'export PATH=$PATH:%s && %s %s %s.fastq.gz %s.sam' % (bowtiedir,bowtie,options,SRR_ID,SRR_ID)
+		cmd = 'export PATH=$PATH:%s && %s %s %s.fastq %s.sam 2> bowtieReport.txt' % (bowtiedir,bowtie,options,SRR_ID,SRR_ID)
 	os.system(cmd)
 
 	if is_pairend =='1':
-		cmd = 'rm %s_1.fastq.gz' % (SRR_ID)
+		cmd = 'rm %s_1.fastq' % (SRR_ID)
 		os.system(cmd)
-		cmd = 'rm %s_2.fastq.gz' % (SRR_ID)
+		cmd = 'rm %s_2.fastq' % (SRR_ID)
 		os.system(cmd)
 	else:
-		cmd = 'rm %s.fastq.gz' % (SRR_ID)
+		cmd = 'rm %s.fastq' % (SRR_ID)
 		os.system(cmd)
 
 def exec_bowtie2(SRR_ID,is_pairend,bowtie2_indexes):
@@ -166,16 +212,20 @@ def start():
 	os.chdir(sample_dir)
 
 	SRRs = get_SRR_ID(GSM_ID)
+	if len(SRRs) == 0:
+		SRRs = get_SRR_ID_from_table(GSM_ID)
 
-	bowtie_indexes = os.path.join(tool_dir,'bowtie-1.1.1/indexes/'+Genome+'_color')
+	bowtie_indexes = os.path.join(tool_dir,'bowtie-1.1.2/indexes/'+Genome+'_color')
 	bowtie2_indexes  = os.path.join(tool_dir,'bowtie2/indexes/'+Genome)
 	if len(SRRs) > 0:
 		for SRR_ID in SRRs:
-			is_pairend = is_paired_end(SRR_ID)
-			platform = eval_platform(SRR_ID)
-			get_sra_file(SRR_ID,is_pairend)
-			exec_FASTQC(SRR_ID,is_pairend)
+			cmd = 'sh %s/is_paired_end.sh %s' % (project_root,SRR_ID)
+			is_pairend = commands.getoutput(cmd)
+			cmd = 'sh %s/eval_platform.sh %s' % (project_root,SRR_ID)
+			platform = commands.getoutput(cmd)
 			print 'platform %s' % (platform)
+			get_sra_file(SRR_ID,is_pairend,platform)
+			exec_FASTQC(SRR_ID,is_pairend,platform)
 			if platform == "1":
 				exec_bowtie(SRR_ID,is_pairend,bowtie_indexes)
 			else:

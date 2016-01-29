@@ -25,10 +25,10 @@ esac
 Logfile="$project_root/$Genome/$bioproject/$sample_GSM.macs2.log.txt"
 
 while :; do
-	is_sample_GSM=`cat $sample_GSM.log.txt|tail -n 1|grep -c "$sample_GSM finished"`
-	is_control_GSM=`cat $control_GSM.log.txt|tail -n 1|grep -c "$control_GSM finished"`
-	no_sample_GSM=`cat $sample_GSM.log.txt|tail -n 1|grep -c "$sample_GSM no sra file"`
-	no_control_GSM=`cat $control_GSM.log.txt|tail -n 1|grep -c "$control_GSM no sra file"`
+	is_sample_GSM=`cat $project_root/$Genome/$bioproject/$sample_GSM.log.txt|tail -n 1|grep -c "$sample_GSM finished"`
+	is_control_GSM=`cat $project_root/$Genome/$bioproject/$control_GSM.log.txt|tail -n 1|grep -c "$control_GSM finished"`
+	no_sample_GSM=`cat $project_root/$Genome/$bioproject/$sample_GSM.log.txt|tail -n 1|grep -c "$sample_GSM no sra file"`
+	no_control_GSM=`cat $project_root/$Genome/$bioproject/$control_GSM.log.txt|tail -n 1|grep -c "$control_GSM no sra file"`
 	if [ $no_sample_GSM = "1" ]; then
 		break
 	fi
