@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # coding: UTF-8
 # thanks to Damian at NextGeneticsBlog! http://blog.nextgenetics.net/?e=44
 
