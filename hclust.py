@@ -20,7 +20,7 @@ for line in inFile:
 dataMatrix = numpy.array(dataMatrix)
 
 # calculate distance matrix and convert squareform
-distanceMatrix = dist.pdist(dataMatrix)
+distanceMatrix = dist.pdist(dataMatrix, "correlation")
 distanceSquareMatrix = dist.squareform(distanceMatrix)
 
 # calculare linkage matrix
