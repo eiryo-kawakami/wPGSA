@@ -24,7 +24,7 @@ distanceMatrix = dist.pdist(dataMatrix, "correlation")
 distanceSquareMatrix = dist.squareform(distanceMatrix)
 
 # calculare linkage matrix
-linkageMatrix = hier.linkage(distanceSquareMatrix)
+linkageMatrix = hier.ward(distanceSquareMatrix)
 
 # get the order of the dendrogram leaves
 heatmapOrder = hier.leaves_list(linkageMatrix)
