@@ -8,13 +8,13 @@ import scipy.spatial.distance as dist
 
 # import data and put into native 2d python array
 inFile = open(sys.argv[1], 'r')
-colHeaders = next(inFile).strip().split()[1:]
+colHeaders = next(inFile).strip().split()[3:] # remove column headers for tf, #exps, z-score mean
 rowHeaders = []
 dataMatrix = []
 for line in inFile:
     data = line.strip().split()
     rowHeaders.append(data[0])
-    dataMatrix.append([float(x) for x in data[1:]])
+    dataMatrix.append([float(x) for x in data[3:]])
 
 # convert native python array into a numpy array
 dataMatrix = numpy.array(dataMatrix)
