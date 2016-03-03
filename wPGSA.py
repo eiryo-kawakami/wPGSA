@@ -5,6 +5,7 @@ import argparse
 import sys, math, numpy
 import scipy as sp
 from scipy import stats
+import pandas as pd
 from rpy2.robjects import r
 import rpy2.robjects as robjects
 
@@ -21,22 +22,17 @@ def get_progressbar_str(progress):
 def read_logFC(logFC_file):
 	exp_value = {}
 	tp_list = []
-	with open(logFC_file, 'r') as fi:
-		line = fi.readline()
-		itemList = line[:-1].split('\t')
-		for i in range(1,len(itemList)):
-			tp_list.append(itemList[i])
-		for tp in tp_list:
-			exp_value[tp] = {}
-		line = fi.readline()
-		while line:
-			itemList = line[:-1].split('\t')
-			gene_symbol = itemList[0]
-			for i in range(len(tp_list)):
-				if itemList[i+1] != "NA":
-					exp_value[tp_list[i]][gene_symbol] = float(itemList[i+1])
-			line = fi.readline()
-
+	df = pd.read_csv(logFC_file,delimiter='\t',index_col=0)
+	tp_list = df.columns
+	#print tp_list
+	gene_symbols = df.index
+	#print gene_symbols
+	for tp in tp_list:
+		exp_value[tp] = {}
+		for gene_symbol in gene_symbols:
+			if df.ix[gene_symbol,tp] != "NA":
+				exp_value[tp][gene_symbol] = float(df.ix[gene_symbol,tp])
+	
 	return exp_value, tp_list
 
 def read_network(network_file):
@@ -46,15 +42,15 @@ def read_network(network_file):
 		line = fi.readline()
 		line = fi.readline()
 		while line:
-			itemList = line[:-1].split('\t')
+			itemList = line.rstrip('\n\r').split('\t')
 			TF = itemList[0]
 			gene_symbol = itemList[2]
-			if int(itemList[5]) >= 0:
+			if int(itemList[4]) >= 0:
 				if TF not in positive:
 					positive[TF] = {}
-				positive[TF][gene_symbol] = float(itemList[4])
+				positive[TF][gene_symbol] = float(itemList[3])
 				if TF not in experiment:
-					experiment[TF] = float(itemList[5])
+					experiment[TF] = float(itemList[4])
 			line = fi.readline()
 
 	return positive, experiment

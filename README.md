@@ -12,4 +12,4 @@ Predicting responsible transcription regulators for given transcriptome data is 
 
 ##Usage
 
-`python wPGSA.py [logFC_file] [networkfile]`
+`python wPGSA.py --logfc-file [logFC_file] --network-file [networkfile]`
