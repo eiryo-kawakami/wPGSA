@@ -1,0 +1,2 @@
+#!/bin/sh
+rsync -aur --include='*/' --include='*.bam' --include='*.txt' --include='*.zip' --include='*.html' --include='*.r' --include='*.bed' --include='*.xls' --include='*.narrowPeak' --include='*.bam' --exclude='*' -e "ssh -i /Users/eiryokawakami/.ssh/id_rsa" ddbj:/home/eiryo-kawakami/repos/PGSEA/mm9/ /Volumes/home/ChIPdata/mm9/
