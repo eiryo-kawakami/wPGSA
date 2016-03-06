@@ -136,12 +136,12 @@ def write_result(result,TF_list,tp_list,experiment,output):
 				fo.write("\t"+tp)
 			fo.write('\n')
 			for i in range(len(TF_list)):
-                # data values list contains all velues for one TF
-                data_values = []
-                for tp in tp_list:
-                    data_values.append(result[data][tp][i])
-                # if all the values are not NaN
-                if not numpy.isnan(data_values).any():
+				# data values list contains all velues for one TF
+				data_values = []
+				for tp in tp_list:
+					data_values.append(result[data][tp][i])
+				# if all the values are not NaN
+				if not numpy.isnan(data_values).any():
 					fo.write(TF_list[i]+'\t'+str(int(experiment[TF_list[i]])))
 					if data == "z_score":
 						mean = 0
