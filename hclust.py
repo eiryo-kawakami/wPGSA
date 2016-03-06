@@ -1,71 +1,53 @@
-import argparse
-from scipy.spatial.distance import pdist
-from scipy.cluster.hierarchy import linkage, dendrogram
+#!/usr/bin/env python
+# coding: UTF-8
+# thanks to Damian at NextGeneticsBlog! http://blog.nextgenetics.net/?e=44
 
-def read_wPGSA_result(wPGSA_result_file,threshold):
-	TF={}
-	tp={}
-	TF_array_list=[]
-	tp_array={}
-	tp_array_list=[]
-	with open(wPGSA_result_file,'r') as fi:
-		line = fi.readline()
-		itemList=line[:-1].split('\t')
-		j=0
-		for i in range(4,len(itemList)):
-			tp[i-4]=itemList[i]
-			tp_array[i-4]=[]
-		line=fi.readline()
-		while line:
-			itemList=line[:-1].split('\t')
-			TF_array=[]
-			flag=0
-			for i in range(4,len(itemList)):
-				value=float(itemList[i])
-				if value>=threshold:
-					flag=1
-			if flag==1:
-				for i in range(4,len(itemList)):
-					value=float(itemList[i])
-					TF_array.append(value)
-					tp_array[i-4].append(value)
-				TF_array_list.append(TF_array)
-				TF[j]=itemList[0]
-				j+=1
-			line=fi.readline()
-	for i in range(len(tp_array)):
-		tp_array_list.append(tp_array[i])
+import sys, numpy, scipy
+import scipy.cluster.hierarchy as hier
+import scipy.spatial.distance as dist
 
-	return TF,tp,TF_array_list,tp_array_list
+# import data and put into native 2d python array
+inFile = open(sys.argv[1], 'r')
+colHeaders = next(inFile).strip().split()[3:] # remove column headers for tf, #exps, z-score mean
+rowHeaders = []
+dataMatrix = []
+for line in inFile:
+    data = line.strip().split()
+    rowHeaders.append(data[0])
+    dataMatrix.append([float(x) for x in data[3:]])
 
-def exec_cluster(array_list,metric,method):
-	lkg=linkage(pdist(array_list,metric=metric),method=method,metric=metric)
-	print lkg
+# convert native python array into a numpy array
+dataMatrix = numpy.array(dataMatrix)
 
-def start():
-	argparser = argparse.ArgumentParser(description='Estimates relative activities of transcriptional regulators from given transcriptome data.')
-	argparser.add_argument('--wPGSA-file', nargs=1, dest='wPGSA_result_file', metavar='wPGSA_result_file', help='wPGSA result file used as a clustering')
-	argparser.add_argument('--threshold', nargs=1, dest='threshold', metavar='threshold', help='threshold for the visualization')
+# calculate distance matrix and convert squareform
+distanceMatrix = dist.pdist(dataMatrix, "correlation")
+distanceSquareMatrix = dist.squareform(distanceMatrix)
 
-	args = argparser.parse_args()
+# calculare linkage matrix
+linkageMatrix = hier.ward(distanceSquareMatrix)
 
-	wPGSA_result_file = args.wPGSA_result_file[0]
-	threshold=float(args.threshold[0])
+# get the order of the dendrogram leaves
+heatmapOrder = hier.leaves_list(linkageMatrix)
 
-	metric='correlation'
-	method='average'
+# reorder the data matrix and row headers according to leaves
+orderedDataMatrix = dataMatrix[heatmapOrder,:]
+rowHeaders = numpy.array(rowHeaders)
+orderedRowHeaders = rowHeaders[heatmapOrder,]
 
-	TF,tp,TF_array_list,tp_array_list=read_wPGSA_result(wPGSA_result_file,threshold)
-	exec_cluster(TF_array_list,metric,method)
+# output data for visualization in a browser with javascript/d3.js
+matrixOutput = []
+row = 0
+for rowData in orderedDataMatrix:
+    col = 0
+    rowOutput = []
+    for colData in rowData:
+        rowOutput.append([colData, row, col])
+        col += 1
+    matrixOutput.append(rowOutput)
+    row += 1
 
-
-if __name__ == "__main__":
-	try:
-		start()
-	except KeyboardInterrupt:
-		pass
-	except IOError as e:
-		if e.errno == errno.EPIPE:
-			pass
-		else:
-			raise
+print('var maxData = ' + str(numpy.amax(dataMatrix)) + ";")
+print('var minData = ' + str(numpy.amin(dataMatrix)) + ";")
+print('var data = ' + str(matrixOutput) + ";")
+print('var cols = ' + str(colHeaders) + ";")
+print('var rows = ' + str([x for x in orderedRowHeaders]) + ";")
