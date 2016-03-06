@@ -32,7 +32,7 @@ def read_logFC(logFC_file):
 		for gene_symbol in gene_symbols:
 			if df.ix[gene_symbol,tp] != "NA":
 				exp_value[tp][gene_symbol] = float(df.ix[gene_symbol,tp])
-	
+
 	return exp_value, tp_list
 
 def read_network(network_file):
@@ -136,11 +136,12 @@ def write_result(result,TF_list,tp_list,experiment,output):
 				fo.write("\t"+tp)
 			fo.write('\n')
 			for i in range(len(TF_list)):
-				flag = 0
-				for tp in tp_list:
-					if result[data][tp][i] == 'nan':
-						flag = 1
-				if flag == 0:
+                # data values list contains all velues for one TF
+                data_values = []
+                for tp in tp_list:
+                    data_values.append(result[data][tp][i])
+                # if all the values are not NaN
+                if not numpy.isnan(data_values).any():
 					fo.write(TF_list[i]+'\t'+str(int(experiment[TF_list[i]])))
 					if data == "z_score":
 						mean = 0
