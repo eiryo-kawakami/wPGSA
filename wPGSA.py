@@ -136,21 +136,26 @@ def write_result(result,TF_list,tp_list,experiment,output):
 				fo.write("\t"+tp)
 			fo.write('\n')
 			for i in range(len(TF_list)):
-				fo.write(TF_list[i]+'\t'+str(int(experiment[TF_list[i]])))
-				if data == "z_score":
-					mean = 0
-					for tp in tp_list:
-						mean += result[data][tp][i]
-					mean = mean / len(tp_list)
-				else:
-					mean = 1
-					for tp in tp_list:
-						mean *= result[data][tp][i]
-					mean = mean ** (1.0/len(tp_list))
-				fo.write('\t'+str(mean))
+				flag = 0
 				for tp in tp_list:
-					fo.write("\t"+str(result[data][tp][i]))
-				fo.write('\n')
+					if result[data][tp][i] == 'nan':
+						flag = 1
+				if flag == 0:
+					fo.write(TF_list[i]+'\t'+str(int(experiment[TF_list[i]])))
+					if data == "z_score":
+						mean = 0
+						for tp in tp_list:
+							mean += result[data][tp][i]
+						mean = mean / len(tp_list)
+					else:
+						mean = 1
+						for tp in tp_list:
+							mean *= result[data][tp][i]
+						mean = mean ** (1.0/len(tp_list))
+					fo.write('\t'+str(mean))
+					for tp in tp_list:
+						fo.write("\t"+str(result[data][tp][i]))
+					fo.write('\n')
 
 def start():
     argparser = argparse.ArgumentParser(description='Estimates relative activities of transcriptional regulators from given transcriptome data.')
