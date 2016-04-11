@@ -30,8 +30,12 @@ def read_logFC(logFC_file):
 	for tp in tp_list:
 		exp_value[tp] = {}
 		for gene_symbol in gene_symbols:
-			if df.ix[gene_symbol,tp] != "NA":
+			try:
 				exp_value[tp][gene_symbol] = float(df.ix[gene_symbol,tp])
+			except TypeError:
+				pass
+			except ValueError:
+				pass
 
 	return exp_value, tp_list
 
@@ -59,7 +63,7 @@ def wPGSA(tp_list,exp_value,positive,experiment):
 	result = {}
 	result["p_value"] = {}
 	result["q_value"] = {}
-	result["z_score"] = {}
+	result["t_score"] = {}
 
 	x = 1.0
 	total_num = len(tp_list) * len(experiment)
@@ -91,7 +95,7 @@ def wPGSA(tp_list,exp_value,positive,experiment):
 		for TF in experiment_vector:
 			TF_list.append(TF)
 
-		result["z_score"][tp] = []
+		result["t_score"][tp] = []
 		result["p_value"][tp] = []
 
 		for TF in experiment_vector:
@@ -109,9 +113,9 @@ def wPGSA(tp_list,exp_value,positive,experiment):
 			SE = numpy.sqrt(var/size+target_var/size)
 			df = (size - 1) * (var + target_var)**2 / (var**2 + target_var**2)
 
-			z_score = (target_mean - mean) / SE
-			result["z_score"][tp].append(z_score)
-			p_value = sp.stats.t.sf(abs(z_score),df)
+			t_score = (target_mean - mean) / SE
+			result["t_score"][tp].append(t_score)
+			p_value = sp.stats.t.sf(abs(t_score),df)
 			result["p_value"][tp].append(p_value)
 
 			progress = x / total_num
@@ -143,7 +147,7 @@ def write_result(result,TF_list,tp_list,experiment,output):
 				# if all the values are not NaN
 				if not numpy.isnan(data_values).any():
 					fo.write(TF_list[i]+'\t'+str(int(experiment[TF_list[i]])))
-					if data == "z_score":
+					if data == "t_score":
 						mean = 0
 						for tp in tp_list:
 							mean += result[data][tp][i]
