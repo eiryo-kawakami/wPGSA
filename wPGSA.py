@@ -8,8 +8,9 @@ from scipy import stats
 import pandas as pd
 from rpy2.robjects import r
 import rpy2.robjects as robjects
+import errno
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 def get_progressbar_str(progress):
 	MAX_LEN = 30
@@ -31,7 +32,8 @@ def read_logFC(logFC_file):
 		exp_value[tp] = {}
 		for gene_symbol in gene_symbols:
 			try:
-				exp_value[tp][gene_symbol] = float(df.ix[gene_symbol,tp])
+				if not math.isnan(df.ix[gene_symbol,tp]):
+					exp_value[tp][gene_symbol] = float(df.ix[gene_symbol,tp])
 			except TypeError:
 				pass
 			except ValueError:
