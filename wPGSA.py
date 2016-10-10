@@ -32,7 +32,7 @@ def read_logFC(logFC_file):
 		exp_value[tp] = {}
 		for gene_symbol in gene_symbols:
 			try:
-				if not math.isnan(df.ix[gene_symbol,tp]):
+				if not math.isnan(df.ix[gene_symbol,tp]) and not math.isinf(df.ix[gene_symbol,tp]):
 					exp_value[tp][gene_symbol] = float(df.ix[gene_symbol,tp])
 			except TypeError:
 				pass
